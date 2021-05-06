@@ -9,7 +9,7 @@ RoutePlanner::RoutePlanner(RouteModel &model, float start_x, float start_y, floa
     end_y *= 0.01;
     m_Model = model;  
 
-    start_node  =  &m_Model.FindClosestNode(start_x,end_x);
+    start_node  =  &m_Model.FindClosestNode(start_x,start_y);
     end_node    =  &m_Model.FindClosestNode(end_x,end_y);
 
     start_node->g_value = start_node->distance(*start_node);
@@ -53,7 +53,7 @@ RouteModel::Node *RoutePlanner::NextNode() {
 
     std::sort(std::begin(open_list), std::end(open_list),
         [](RouteModel::Node* a, RouteModel::Node* b) 
-        { return a->g_value+a->h_value < b->g_value+b->h_value; });
+        { return a->g_value+a->h_value > b->g_value+b->h_value; });
 
         RouteModel::Node *top = open_list.back();
         open_list.pop_back();
@@ -115,8 +115,12 @@ void RoutePlanner::AStarSearch() {
 
     while (open_list.size()>0)
     {   
-        AddNeighbors(current_node);
         current_node =  NextNode();
+        if (current_node == end_node)
+            break;        
+            
+        AddNeighbors(current_node);
+
     }
 
     m_Model.path = ConstructFinalPath(end_node);
