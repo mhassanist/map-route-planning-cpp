@@ -7,10 +7,11 @@ RoutePlanner::RoutePlanner(RouteModel &model, float start_x, float start_y, floa
     start_y *= 0.01;
     end_x *= 0.01;
     end_y *= 0.01;
+    m_Model = model;  
 
     start_node  =  &m_Model.FindClosestNode(start_x,end_x);
     end_node    =  &m_Model.FindClosestNode(end_x,end_y);
-    
+
     start_node->g_value = start_node->distance(*start_node);
     start_node->h_value = CalculateHValue(start_node);
 }
@@ -49,6 +50,7 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
 // - Return the pointer.
 
 RouteModel::Node *RoutePlanner::NextNode() {
+
     std::sort(std::begin(open_list), std::end(open_list),
         [](RouteModel::Node* a, RouteModel::Node* b) 
         { return a->g_value+a->h_value < b->g_value+b->h_value; });
@@ -75,13 +77,14 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
     
     RouteModel::Node *temp = current_node;
 
-    while (temp != nullptr)
+    while (temp->parent != nullptr)
     {
         path_found.push_back(*temp);
         distance += temp->distance(*temp->parent);
         
         temp = temp->parent;
     }
+    path_found.push_back(*temp);
 
     distance *= m_Model.MetricScale(); // Multiply the distance by the scale of the map to get meters.
     
@@ -102,10 +105,10 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
 void RoutePlanner::AStarSearch() {
     RouteModel::Node *current_node = nullptr;
     
-    current_node = start_node;
-    current_node->visited = true;
-    current_node->h_value = CalculateHValue(current_node);
-    current_node->g_value =0;
+    current_node            = start_node;
+    current_node->visited   = true;
+    current_node->h_value   = CalculateHValue(current_node);
+    current_node->g_value   = 0;
 
     this->open_list.push_back(current_node);
     
